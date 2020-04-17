@@ -1,0 +1,131 @@
+How to install terraform and terraform-libvirt-provider on remote bare metal debian server.
+
+
+/roles/terraform/tasks/debian.yml
+---
+- name: Ensure required packages are available.
+  package:
+    name: 
+      - unzip
+    state: present
+
+- name: "Download terraform {{ terraform_version }} binary."
+  get_url:
+    url: "{{ terraform_download_url }}"
+    dest: /tmp/
+
+- name: unarchive and move terraform binary to executable location
+  unarchive:
+    src: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
+    dest: /usr/local/bin/
+    remote_src: yes
+    
+- name: change terraform file permissions
+  file:
+    path: /usr/local/bin/terraform
+    mode: u+x
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    
+- name: cleanup residue
+  file:
+    path: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
+    state: absent
+
+/roles/terraform-libvirt-provider/tasks/debian.yml
+
+
+---
+- name: download golang tar
+  get_url:
+    url: "{{ go_download_url }}"
+    dest: /tmp/
+    mode: 0440
+  become: yes
+
+- name: remove old installation of go
+  file:
+    path: /usr/local/go
+    state: absent
+  become: yes
+
+- name: extract tarball
+  unarchive:
+    src: "/tmp/go{{go_version}}.linux-amd64.tar.gz"
+    dest: /usr/local
+    copy: no
+  become: yes
+
+- name: clone  terraform-provider-libvirt
+  shell: /usr/local/go/bin/go get github.com/dmacvicar/terraform-provider-libvirt
+  args:
+    executable: /bin/bash
+
+- name: install terraform-provider-libvirt
+  shell: /usr/local/go/bin/go install github.com/dmacvicar/terraform-provider-libvirt
+  args:
+    executable: /bin/bash
+  
+- name: cleanup residue
+  file: 
+    path: "/tmp/go{{go_version}}.linux-amd64.tar.gz"
+    state: absent
+  become: yes
+
+
+
+
+/roles/terraform_apply/tasks/debian.yml
+---
+- name: make a project directory for the terraform
+  file: 
+    path: "{{remote_home_dir}}/{{terraform_project}}"
+    state: directory
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+
+- name: init terraform in the home dir
+  shell:
+    cmd: terraform init
+    chdir: "{{remote_home_dir}}/"
+
+- name: create plugin dir
+  file:
+    path: "{{ terraform_plugin_dir }}"
+    state: directory
+
+- name: copy libvirt plugin to terraform plugin dir
+  copy:
+    src: "{{ go_libvirt_plugin_dir }}"
+    dest: "{{ terraform_plugin_dir }}"
+    mode: a+x
+    remote_src: yes
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+
+- name: copy terraform project files to the remote terraform directory
+  copy:
+    src: "{{ local_files_dir }}/terraform_kvm/"
+    dest: "{{remote_home_dir}}/{{terraform_project}}/"
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    backup: yes
+    directory_mode: yes
+    force: yes
+
+- name: recursively chmod the terraform directory
+  file:
+    path: "{{remote_home_dir}}/{{terraform_project}}/"
+    mode: u+rwx,g+rx,o+rx,
+    recurse: yes
+
+- name: initialize the terrafom project
+  shell:
+    chdir: "{{remote_home_dir}}/{{terraform_project}}/"
+    cmd: "terraform init"
+
+    # TODO: following part is not idemopotent. to be fixed, 
+# - name: apply terraform infra config
+#   shell:
+#     chdir: "{{remote_home_dir}}/{{terraform_project}}/"
+#     cmd: "terraform apply"
