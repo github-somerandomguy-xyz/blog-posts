@@ -1,6 +1,15 @@
 How to install terraform and terraform-libvirt-provider on remote bare metal debian server.
 
 
+
+
+here we do the folowing in the following order:
+first we ensure that all the prerequisites are available, all u need is to unziip a file!
+so you ""ensure" to make sure it's there.
+next you just download it and put it in it's place.
+
+
+
 /roles/terraform/tasks/debian.yml
 ---
 - name: Ensure required packages are available.
@@ -31,6 +40,25 @@ How to install terraform and terraform-libvirt-provider on remote bare metal deb
   file:
     path: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
     state: absent
+
+
+
+the best way to not get trapped in golang's fun trip with setting PATH varibles rolletcoster ride is to never thouch that mess.
+to never be able to touch it, i made sure I used the right user to run the go command. 
+let me explain: here the goal is to create the binary for the lib-virt provider.
+in there documentation they say it would be created in the bin folder.
+go was compaining it yould not find the go path something like that.
+especially if u do not want to use the full path.
+main lession learnt is to call using the full path of the go route.
+if u want to access it as  non-root user it's a whole new gimmic, to set the .profile etc,.
+for this another user, to avoid all that, i made sure the default setting is not to be a root user for the entire role, instead it's important/ or very usefull to  be the right kinda of user at the very early stagee.
+in my case the go folder created by this task 
+
+
+
+
+
+
 
 /roles/terraform-libvirt-provider/tasks/debian.yml
 
