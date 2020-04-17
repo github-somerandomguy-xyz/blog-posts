@@ -61,6 +61,9 @@ https://gist.github.com/github-somerandomguy-xyz/53d4f68fbbc4958fa79b17f62b0c5f5
 9. set the image pool to autostart and finally enure that the image pool is active. (thankfully these final 2 tasks are idemopotent so we need not need to have any checks before executing them)
 https://gist.github.com/github-somerandomguy-xyz/09eddee1e1829e816faa1c59caa9bd6b
 
+If you were following along your debian.yml should look like this:
+https://gist.github.com/github-somerandomguy-xyz/d9c92df1f15c4d309345f3ad3242e055
+
 /roles/kvm/defaults/main.yml:
 https://gist.github.com/github-somerandomguy-xyz/b2fade84b1cdc0fcde2eecfbb49ec9a3
 as mentioned for the role common, this is the main place to put vars for your role KVM, I have senn folks going super over-enginnering-mode, while setting vars, they have my blessings, I have just put it in an most "obvious and boring"* way (*That's what she said).
@@ -71,6 +74,7 @@ mine looks like this:
 /dev-kvm.yml:
 https://gist.github.com/github-somerandomguy-xyz/a4a48e58b9ed9070881e78f79c2f0335
 now we finally put together the 2 roles that starts the wonderful journey of self-hosted cloud infra management using IaC.
+I mean you just run ansible-playbook dev-kvm.yml 
 just saying: some folks, call above file as main.yml, it makes sense if your entire repo is meant for this one thing, ie install kvm, but this project scales to further inslatall, terraform, use a libvirt provider for terraform, and use cloud-init to config images, overengineered network config etc,.etc,. … what am saying is, call your "main" file whatever makes sense for your project's use-case.
 
 next up: setting up terraform and terraform-libvirt-provider using ansible.
