@@ -1,192 +1,38 @@
-How to install terraform and terraform-libvirt-provider on remote bare metal debian server.
-
-
-Soo... kids, in todays class we will create th next big automation buzz word out there terraform.
+How to install terraform and terraform-libvirt-provider on remote bare metal debian server.
+Soo… kids, in today's class we will install the next big automation buzz word out there "Terraform" on our bare-metal server and we will also build a plugin called "terraform-libvirt-provider" it's required if you wish to manage a libvirsh based VMs on the Host server, to see how to install KVM and Libvirsh on a remote server have a look at my previous blog post.
 here we will create 3 (I say 2.5) roles to do the following:
 install terraform on a remote server
 clone and build the terraform-libvirt-provider binary (using "go") and init a terrafom at the home directory.
-copy our terraform source code to the remote server and execute a "terrafomr_apply" to create a test VM (VM image built using cloud-init).
-
+copy our terraform source code to the remote server and execute a "terrafom_apply" to create a test VM (VM image built using cloud-init).
 here we do the folowing in the following order:
+/roles/terraform/tasks/debian.yml
+
 first we ensure that all the prerequisites are available, all u need is to unziip a file!
-so you ""ensure" to make sure it's there.
+so you "ensure" to make sure it's there.
 next you just download it and put it in it's place.
 
 
 
-/roles/terraform/tasks/debian.yml
----
-- name: Ensure required packages are available.
-  package:
-    name: 
-      - unzip
-    state: present
-
-- name: "Download terraform {{ terraform_version }} binary."
-  get_url:
-    url: "{{ terraform_download_url }}"
-    dest: /tmp/
-
-- name: unarchive and move terraform binary to executable location
-  unarchive:
-    src: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
-    dest: /usr/local/bin/
-    remote_src: yes
-    
-- name: change terraform file permissions
-  file:
-    path: /usr/local/bin/terraform
-    mode: u+x
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-    
-- name: cleanup residue
-  file:
-    path: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
-    state: absent
-
 
 
 the best way to not get trapped in golang's fun trip with setting PATH varibles rolletcoster ride is to never thouch that mess.
-to never be able to touch it, i made sure I used the right user to run the go command. 
+to never be able to touch it, i made sure I used the right user to run the go command.
 let me explain: here the goal is to create the binary for the lib-virt provider.
 in there documentation they say it would be created in the bin folder.
 go was compaining it yould not find the go path something like that.
 especially if u do not want to use the full path.
 main lession learnt is to call using the full path of the go route.
-if u want to access it as  non-root user it's a whole new gimmic, to set the .profile etc,.
-for this another user, to avoid all that, i made sure the default setting is not to be a root user for the entire role, instead it's important/ or very usefull to  be the right kinda of user at the very early stagee.
-in my case the go folder created by this task 
-
+if u want to access it as non-root user it's a whole new gimmic, to set the .profile etc,.
+for this another user, to avoid all that, i made sure the default setting is not to be a root user for the entire role, instead it's important/ or very usefull to be the right kinda of user at the very early stagee.
+in my case the go folder created by this task
 /roles/terraform-libvirt-provider/tasks/debian.yml
-
-
----
-- name: download golang tar
-  get_url:
-    url: "{{ go_download_url }}"
-    dest: /tmp/
-    mode: 0440
-  become: yes
-
-- name: remove old installation of go
-  file:
-    path: /usr/local/go
-    state: absent
-  become: yes
-
-- name: extract tarball
-  unarchive:
-    src: "/tmp/go{{go_version}}.linux-amd64.tar.gz"
-    dest: /usr/local
-    copy: no
-  become: yes
-
-- name: clone  terraform-provider-libvirt
-  shell: /usr/local/go/bin/go get github.com/dmacvicar/terraform-provider-libvirt
-  args:
-    executable: /bin/bash
-
-- name: install terraform-provider-libvirt
-  shell: /usr/local/go/bin/go install github.com/dmacvicar/terraform-provider-libvirt
-  args:
-    executable: /bin/bash
-  
-- name: cleanup residue
-  file: 
-    path: "/tmp/go{{go_version}}.linux-amd64.tar.gz"
-    state: absent
-  become: yes
-
-- name: make a project directory for the terraform
-  file: 
-    path: "{{remote_home_dir}}/{{terraform_project}}"
-    state: directory
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-
-- name: init terraform in the home dir
-  shell:
-    cmd: terraform init
-    chdir: "{{remote_home_dir}}/"
-
-- name: create plugin dir
-  file:
-    path: "{{ terraform_plugin_dir }}"
-    state: directory
-
-- name: copy libvirt plugin to terraform plugin dir
-  copy:
-    src: "{{ go_libvirt_plugin_dir }}"
-    dest: "{{ terraform_plugin_dir }}"
-    mode: a+x
-    remote_src: yes
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-
 
 
 
 This would ideally be the place where everything comes together finally.
 the big climax, ( that never happened #spolerAlert #toolate)
 even thought this would work perfectly well if your baremetal server is a virgin server,
-but unfortunately that's seldom the case in the real world, no self respcting admins with a pulse, would let that be the case(... I think).
-but in my case the issue was there was already an preexisting infra on the server (mainly networkconfigs and virsh VMs managed by KVM hypervisers), now the terraformform docs do give a nifty soultions for this, using "imports" or something <do proper reasearch on why we cannot codify all the imports on existing infra> am not really sure how it works, based on the 2nd hand info from stackoverflow and googing around, i see that i should execute the "import"on terraform cli, i find this sooultion ugly, i woulld rather mentione it in the code, to import all the exising infra, 
+but unfortunately that's seldom the case in the real world, no self respcting admins with a pulse, would let that be the case(… I think).
+but in my case the issue was there was already an preexisting infra on the server (mainly networkconfigs and virsh VMs managed by KVM hypervisers), now the terraformform docs do give a nifty soultions for this, using "imports" or something <do proper reasearch on why we cannot codify all the imports on existing infra> am not really sure how it works, based on the 2nd hand info from stackoverflow and googing around, i see that i should execute the "import"on terraform cli, i find this sooultion ugly, i woulld rather mentione it in the code, to import all the exising infra,
 one idea is to use the ansible facts as the input for the terraform imports and make terraform initialize and maintain a terraform state from there.<should do reasearch on, weather it's possiable, if nt why it's not possablle">
-
-
-
 /roles/terraform_apply/tasks/debian.yml
----
-- name: make a project directory for the terraform
-  file: 
-    path: "{{remote_home_dir}}/{{terraform_project}}"
-    state: directory
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-
-- name: init terraform in the home dir
-  shell:
-    cmd: terraform init
-    chdir: "{{remote_home_dir}}/"
-
-- name: create plugin dir
-  file:
-    path: "{{ terraform_plugin_dir }}"
-    state: directory
-
-- name: copy libvirt plugin to terraform plugin dir
-  copy:
-    src: "{{ go_libvirt_plugin_dir }}"
-    dest: "{{ terraform_plugin_dir }}"
-    mode: a+x
-    remote_src: yes
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-
-- name: copy terraform project files to the remote terraform directory
-  copy:
-    src: "{{ local_files_dir }}/terraform_kvm/"
-    dest: "{{remote_home_dir}}/{{terraform_project}}/"
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-    backup: yes
-    directory_mode: yes
-    force: yes
-
-- name: recursively chmod the terraform directory
-  file:
-    path: "{{remote_home_dir}}/{{terraform_project}}/"
-    mode: u+rwx,g+rx,o+rx,
-    recurse: yes
-
-- name: initialize the terrafom project
-  shell:
-    chdir: "{{remote_home_dir}}/{{terraform_project}}/"
-    cmd: "terraform init"
-
-    # TODO: following part is not idemopotent. to be fixed, 
-# - name: apply terraform infra config
-#   shell:
-#     chdir: "{{remote_home_dir}}/{{terraform_project}}/"
-#     cmd: "terraform apply"
