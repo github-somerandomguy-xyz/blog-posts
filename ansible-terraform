@@ -1,33 +1,52 @@
 How to install terraform and terraform-libvirt-provider on remote bare metal debian server.
-Soo… kids, in today's class we will install the next big automation buzz word out there "Terraform" on our bare-metal server and we will also build a plugin called "terraform-libvirt-provider" it's required if you wish to manage a libvirsh based VMs on the Host server, to see how to install KVM and Libvirsh on a remote server have a look at my previous blog post.
-here we will create 3 (I say 2.5) roles to do the following:
-install terraform on a remote server
-clone and build the terraform-libvirt-provider binary (using "go") and init a terrafom at the home directory.
-copy our terraform source code to the remote server and execute a "terrafom_apply" to create a test VM (VM image built using cloud-init).
+Soo… kids, in today's class we will install the next big automation buzz word out there "Terraform" on our bare-metal server and we will also build a plugin called "terraform-libvirt-provider" it's required if you wish to manage a libvirsh based VMs on the Host server, to see how to install KVM and libvirt on a remote server have a look at my previous blog post.
+here we will create 2 roles to do the following:
+- install terraform on a remote server
+- clone and build the terraform-libvirt-provider binary (using "go") and init terrafom with this plugin for this ansible user.
+
+- Role terrafom
 here we do the folowing in the following order:
 /roles/terraform/tasks/debian.yml
 
-first we ensure that all the prerequisites are available, all u need is to unziip a file!
-so you "ensure" to make sure it's there.
-next you just download it and put it in it's place.
+All it take to install terraform is to download their terrafomr binary and place it in the right folder.
+Basically all you need is uzip to unzip the download.
+so first we "ensure" that all the prerequisites are available(.i.e. uzip package)
+next you just download terrafomr and put it in it's place.
 
 
 
 
-
+Ransom Rant, follows, feel free to skip this section.
 the best way to not get trapped in golang's fun trip with setting PATH varibles rolletcoster ride is to never thouch that mess.
 to never be able to touch it, i made sure I used the right user to run the go command.
 let me explain: here the goal is to create the binary for the lib-virt provider.
 in there documentation they say it would be created in the bin folder.
-go was compaining it yould not find the go path something like that.
-especially if u do not want to use the full path.
-main lession learnt is to call using the full path of the go route.
-if u want to access it as non-root user it's a whole new gimmic, to set the .profile etc,.
-for this another user, to avoid all that, i made sure the default setting is not to be a root user for the entire role, instead it's important/ or very usefull to be the right kinda of user at the very early stagee.
-in my case the go folder created by this task
+go was compaining it could not find the go path something like that.
+so offcourse I set the PATH vars all over the place, and simulate the logout login and also esscentially use the .profile as the source for executing the go function, i cannotget into explaining the BS, that you have to go through while useing golang, 
+am sure golang works perfectly well for simps, who would install it manually and do the followingstuff manually like a chimp,
+but since i took this new gig to automate everything(almost like a suicide mission for my own carrier), this PATH setting env vars nonsence with golang dosn't fly.
+this is especially true if you are a nonroot user and  want to use go commands directly (as in `go get blah_blah_blah_BS`).
+so.. anyhow the main lession learnt is to use the full path of the go binary for executing go commands, and try not to touch the PATH env vars at all.
+
 /roles/terraform-libvirt-provider/tasks/debian.yml
 
+Note: for those who (righly) skipped my rant: 
+1. It's kinda important to switch from root user to the non-root user while using golang to build this plugin (switch to whichever your user would be running your terrafom code in the future(in my case it will be the same ansible user on the server)).
+2. to avoid confusing the OS to find the goland binary, it's also important to give the full path to the golang binary when executing `go` commands.
 
+
+Random Insights and rants, feel free to skip this section:
+Ideally I would love to have a ansible role to do the terraform_apply, this role would just copy the terraform .ts files and cloud-init config filles to the remote server and execute `terrafomr apply` on the btch.
+but I learnt the hard way, that that this strategy would seldom be idemopotent:
+here's my use-case: during my trials to setup this infra, i previously tested my terrafom configs and executed them, later I destroyed everything (using terraform destroy) but some residue was still left behind (like the libvirt network, VM images etc,.).
+on the other this, this scenario, made me realize, if you already have an existing infra (some cloud setup with VMs and bridges/networks etc,.) we need to "import" these resources to terraform state anyways.
+so am left with two choices, I can either nuke the entire server and start managing the terrafom orcestrated infra on a "virgin" server.
+or I could run terrafom import for all the existing resources.
+I belive in most cases, in real world, the latter would be the case (I dont think any self respecting admin with a pulse, would leave the server in it'S virgin state for that long).
+aah, so...the next task for me looks like this:
+1. I could write a blog post on how to set install VMs and network configs etc,. on a fresh server, without ansible (basically you login clone the code do changes and execcute terrafom plan and apply cmds). ("must-have" task).
+2. write a post on how to import exising infra to terrafom state and continue maintining from there to orcestrate the infra. ("should-have" task)
+3. do above point 2, using ansible, perhaps ansible can use the "ansible facts" data as input to decide which resources to import to the terraform state. ("nice-to-have" task).
 
 This would ideally be the place where everything comes together finally.
 the big climax, ( that never happened #spolerAlert #toolate)
