@@ -4,27 +4,27 @@ Ansible Playbook/Role to install KVM with a custom virsh-pool.
 If you were tasked with creating VMs on remote bare-metal servers and then use them to orchestrate your own cloud (bcoz fuk AWS,GCP, etc,.) and were confused where the hell to start…Welcome.
 Intro: In case you didn't get the news (at-least I caught on late), Ansible is a tools/framework/whatever used to write what's known as "Infrastructure as code" (IaC) (I think of Ansible as Bash script on steroids (or Bash script with extra steps)) they call these playbooks (in the background uses python, make sure u have python installed on the machine where you want to run Ansible).
 prerequisite: this post assumes that you at-least tried and/or tried-and-failed at converting from your old-school Infra built with Linux native tools to this new automation/IaC stuff.
-Intro (real intro): As the title of the post says, In this Post, we will be using just Ansible to install all sorts of required KVM and it's ilk Libvirsh packages.
+Intro (real intro): As the title of the post says, In this Post, we will be using just Ansible to install all sorts of required KVM and it's ilk libvirt packages.
 
 
 ---
 
 I'll assume you're already familiar with installing Ansible and know some basic jargon used around here (check prerequisite or how-ansible-works).
-just a quick one (basic_concepts):
+just a quick reminder(basic_concepts):
 controller node: pretty much just the machine where Ansible is installed and from where you run your Ansible code from. This machine SSHs into the target machine and runs your tasks (I personally use a Vagrant box on my machine for using it as a controller node).
 managed node: this is the target machine, that controller node does changes on. you put a list of managed nodes (IP addresses and names mainly) in an "Investory" file to manage em.
 task: imagine this is the command you execute on Bash, essentially it's the smallest unit of work you do in an ansible play.
 play/playbook: a collection of tasks, usually the idea is when you run all the tasks grouped in a play (in an order), should achieve some goal, like installing all the packages and configuring those packages as per need.
-role: a reusable collection of playbooks, some variables, etc,., that does one entire job, it's generally designed to be modular in nature (as-in anyone can import a role, change the vars as per need and run it. And it should do the magic on there managed nodes).
+role: a reusable collection of playbooks, some variables, etc,., that does one entire job, it's generally designed to be modular in nature (as-in anyone can import a role, change the vars as per need and run it. And it should do the magic on their managed nodes).
 This post is all about creating a couple of roles and running them, so… you will see.
 
-there are other concepts in Ansible, it's pretty much straight forward, but for this article, knowing this much is already overkill.
+there are other concepts in Ansible, it's pretty much straight forward, but for this article, knowing this much is already an overkill.
 
 
 ---
 
-let's stop beating around the…& get started with the `task`:
-Ok then, moving on: let's first create an empty boilerplate project for ansible based on the ansible's best practice concept. You can clone this empty boilerplate project repo from here if you want, I took this from different sources from the internet, and merged and cleaned it up.
+let's get started with the "task"(see wat i did there)
+Ok then, moving on: let's first create an empty boilerplate project for Ansible based on the Ansible's best practice concept. You can clone this empty boilerplate project repo from here if you want, I took this from different sources from the internet, and merged and cleaned it up.
 the folder structure for this project looks like this:
 _inventory/          # where you put your investory file
     staging.ini
@@ -78,16 +78,17 @@ this is where the real tasks for this role are, you might have noticed this is a
 
 
 
-/roles/common/tasks/debian.yml:here, 1st we execute a dpkg --configure -a (as u should, don't ask me why), then next we install a whole lot of utils, packages, and stuff.
-2nd we set up something for collecting stats on this machine, by enabling "/etc/default/sysstat"
-feel free to ignore the 2nd task, if it's irrelevant for your use-case.
+/roles/common/tasks/debian.yml:here, 1st we execute a dpkg --configure -a (as u should, don't ask me why… well bcos it's a good idea to check if; "all unpacked but unconfigured packages are configured" (… u asked)),
+2nd we install a whole lot of utils, packages, and stuff.
+3rd we set up something for collecting stats on this machine, by enabling "/etc/default/sysstat"
+feel free to ignore the 3rd task, if it's irrelevant for your use-case.
 /roles/defaults/main.yml:
 
-the folder /roles/defaults is where you set up the vars, ideally the person using your role should just change values on these vars for your role to work in their setup (in this folder you could further over-engineer to have different files for different OS types, but the main.yml in this folder is where the story of reading vars for this role starts. in this case, there are no vars needed for the "common" role so it's empty).
-PS: Disclaimer; I lifted this role "common" from here and removed the golang package from install (for reasons…).
-now that the side-kick character's role "common"'s intro is done, let's introduce the main Hero role of the show; KVM.
-This role has the same folder structure as "common" as would any other roles you would add in the future( it's generally a good practice to keep a standard, at-least within your company/Project (if not across the globe), … for common-sense reasons…)
-if you are anything like me you could copy-paste /roles/common/ to /roles/kvm (cp -r /roles/common /roles/kvm), however, you did that following are the required changes in the role KVM:
+the folder /roles/defaults is where you set up the vars, ideally the person using your role should just change values on these vars for your role to work in their setup (in this folder you could further over-engineer to have different files for different OS types, but the "main.yml" in this folder is where the story of reading vars for this role starts. in this case, there are no vars needed for the "common" role so it's empty).
+PS: Disclaimer; I lifted this role "common" from here and removed the golang package from from the original source. (bcoz it's a good idea to install 'go' from their source code, to avoid their env 'PATH' var nightmare, in-fact we do install 'go' from source, further down the line, when we are building golang based plugins for terraform).
+now that the side-kick character "common" role's intro is done, let's introduce the main Hero role of the show; KVM.
+This role has the same folder structure as "common" as would any other roles you would add in the future(Ansible knows it's a role based on the folder structure,( it's generally a good practice to keep a standard, at-least within your company/Project (if not across the globe), … for common-sense reasons.)
+if you are anything like me you could copy-paste /roles/common/ to /roles/kvm (cp -r /roles/common /roles/kvm), however, you choose to do it, the following are the required changes in the role KVM:
 
 
 ---
@@ -98,7 +99,7 @@ Role KVM breakdown:
 
 
 
-/roles/kvm/tasks/main.yml:It's exactly the same as the /roles/common/tasks/main.yml (it imports the debian.yml file from the local folder) but sets it's tagging differently, just ignore tags, for now (you can remove em completely if you want), it will become relevant in the future advance concepts. for now, just know you can pretty much set the tags with any name you want, it makes sense to name them according to the genre (it's similar to the tags you find in a prn video) just keep the names relevant to the task/play at hand, that's all.
+/roles/kvm/tasks/main.yml:It's exactly the same as the /roles/common/tasks/main.yml (it imports the debian.yml file from the local folder) but sets it's tagging differently, just ignore tags, for now (you can remove em completely if you want), it will become relevant in the future advance concepts. for now, just know you can pretty much set the tags with any name you want, it makes sense to name them according to the genre (it's similar to the tags you find for a prn video) just keep the names relevant to the task/play at hand, that's all.
 /roles/kvm/tasks/debian.yml:
 
 1. first the necessary evil, install a whole lot to packages required for running KVM and also the required packages for running the ansible(community-driven) module virt_pool (it just needs,python-lxml and python3-libvirt extra):
@@ -115,15 +116,15 @@ Note: some say; to name your users on servers that are not easy to guess, like "
 
 
 Random Rant follows, feel free to ignore and goto point 4 directly:
-next enter "virsh_pool" module from ansible that's written and maintained by the community and is Not guaranteed for reverse compatibility with ansible, 1st off I don't understand why Redhat would not give full support for there own products, is beyond me, and second this module has the following talents:
-1. it's not idempotent (idempotency is pretty much the stick of Ansible), it's quite frustrating when u run the code once it works, but then again for the 2nd time when you are giving a demo or showing to your bosses, it paints the screen red/blood-bath (It's just Libvirsh complaining that the same pool name already exists or already activated).
-2. it's not obvious which user is connected to the Libvirsh and running your Libvirsh commands, let me explain: since it's all ansible IaC concepts and baby-proofing server administration, one would expect the libvirt command is run by the same ansible user on the machine, but it turns out the default connection string uri used in the modules' code is "Quemu:///system", until you explicitly change it to "Quemu:///secession". for the uninitiated, this means no matter who is running the ansible task(you can try "become" or "su" commands within the task however you want) but the module still makes the virt-pool operations for the top dog .i.e. root user.
-I had to dig into the source of this module to see what's happening,(it's logically neatly structured code), link here, and also in the doc, it turns out there was indeed a property to set the uri, but I taught it was redundant or for diff use-case(bcos my ansible user's in the libvirt group and the same user is running this virsh_pool tasks) …. don't get me wrong, I'm grateful for this guy's contribution It's probably my fault for not RTFM (read-the-fukin-manual) #rtfm.
-4. We gather facts on the existing virsh-pools available in the system, using the command facts this updates all the virsh pool available on the server to this variable called"ansible_libvirt_pools":
+next enter "virsh_pool" module from ansible that's written and maintained by the community and is Not guaranteed for reverse compatibility with ansible, 1st off I don't understand why Redhat(part of Ansible devs) would not give full support for there own products, is beyond me, and second this module has the following talents:
+1. it's not idempotent (Idempotence is pretty much the stick of Ansible), it's quite frustrating when u run the code once it works, but then again for the 2nd time when you are giving a demo or showing to your bosses, it paints the screen red/blood-bath (It's just Libvirsh complaining that the same pool name already exists or already activated).
+2. it's not obvious which user is connected to the KVM/QEMU (through libvirt)and running your libvirt commands, let me explain: since it's all ansible IaC concepts and baby-proofing server administration, one would expect the libvirt command is run by the same ansible user on the machine, but it turns out the default connection string uri used in the modules' code is "qemu:///system", until you explicitly change it to "qemu:///secession". for the uninitiated, this means no matter who is running the ansible task(you can try "become" or "su" commands within the task however you want) but the module still makes the virt-pool operations for the top dog .i.e. root user.
+I had to dig into the source of this module to see what's happening,(it's logically neatly structured code), link here, and also in the doc, it turns out there was indeed a property to set the uri, but I taught it was redundant or for diff use-case(bcos my ansible user's in the libvirt group and the same user is running this virsh_pool tasks) …. don't get me wrong, I'm grateful for this guy's contribution It's probably my fault for not RTFM #rtfm.
+4. We gather facts on the existing virsh-pools available in the system, using the command facts this updates all the virsh pool facts available on the server to this variable called"ansible_libvirt_pools":
 
 
 
-Note: set the property "uri" in all the calls for virsh_pool to "qemu:///session" if you plan on using a non-root user to manage your Libvirsh.
+Note: set the property "uri" in all the calls for virsh_pool to "qemu:///session" if you plan on using a non-root user to manage your KVM based VMs.
 5. Next task checks if the pool you are trying to create is already created.If it exists, this task is skipped.
 Note: (for folks who rightfully skipped my Rant above) it's important to do this check and skip the task because the virsh_pool module is not idempotent in design, so if you run this code twice; the first time it might run, but the second time it would fail because the image pool already exists, so… this check is there to make things idempotent:
 
@@ -133,7 +134,7 @@ Note: (for folks who rightfully skipped my Rant above) it's important to do this
 
 
 
-7. After creating the new pool you will have to run the gather facts task again (point 4 above)because the old variable "ansible_libvirt_pools" is not updated with the newly created image pools info.
+7. After creating the new pool you will have to run the gather facts task again (step 4 above)because the old variable "ansible_libvirt_pools" is not updated with the newly created image pool's info.
 8. The next block of tasks is only needed if the storage pool is not already activated, in this block we build the image pool and start the image pool.
 
 
@@ -167,8 +168,8 @@ ansible_user: "ansible"
 
 
 /dev-kvm.ymlhere we finally put together the 2 roles that start the play… (ushering the wonderful journey of self-hosted cloud infra management using IaC.) I mean you just run ansible-playbook dev-kvm.yml
-Rant/opinion-Piece to Ignore: just saying, some folks, call above file as main.yml, it makes sense if your entire repo is meant for this one thing, ie install kvm, but this project scales to further install, terraform, use a libvirt-provider(terraform-provider-libvirt) for terraform, and use cloud-init to config images, overengineered network config etc,.etc,. … what am saying is, call your "main" file whatever makes sense for your project's use-case.
-next up: setting up terraform and terraform-provider-libvirt plugin using ansible.
+Rant/opinion-Piece to Ignore: just saying, some folks, call above file as main.yml, it makes sense if your entire repo is meant for this one thing, .i.e. install kvm, but this project scales to further install, terraform, use a libvirt-provider(terraform-provider-libvirt) for terraform, and use cloud-init to config images, over-engineered network config, start a docker swarm, setup Jenkins etc,.etc,. … what am saying is, call your "main" file whatever makes sense for your project's use-case.
+next up: setting up terraform and terraform-provider-libvirt plugin using Ansible.
 sources: 
-1. ansible-kvm(This Post's code): https://github.com/github-somerandomguy-xyz/ansible-kvm
+1. ansible-kvm(This Post's complete source code): https://github.com/github-somerandomguy-xyz/ansible-kvm
 2. ansible-boilerplate code: https://github.com/github-somerandomguy-xyz/ansible-genesis
