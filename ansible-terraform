@@ -1,46 +1,86 @@
-How to install terraform and terraform-libvirt-provider on remote bare metal Debian server using Ansible.
-Soo… kids, in today's class we will install and config the next big automation buzz word out there "Terraform" on our bare-metal server and we will also build a plugin called "terraform-libvirt-provider" using Ansible( this plugin's required if you wish to manage a libvirt based VMs on the Host server), to see how to install KVM and libvirt on a remote server (using Ansible)have a look at my previous post<put link here>.
+---
 
-this is rather a very simple post, here we will create 2 roles to do the following:
-- install terraform on a remote server
-- clone and build the terraform-libvirt-provider binary (using "go") and init terrafom with this plugin for this ansible user.
-- Role terrafom
-here we do the folowing in the following order:
-/roles/terraform/tasks/debian.yml
-https://gist.github.com/github-somerandomguy-xyz/c3c4c6d0c4cb059b522ef76ab7fac9e3
-All it take to install terraform is to download their terrafom binary and place it in the right folder.
-Basically all you need is uzip to unzip the download.
-so first we "ensure" that all the prerequisites are available(.i.e. uzip package)
-next you just download terrafom and put it in it's place.
-Random Rant, follows, feel free to skip this section.
-the best way to not get trapped in golang's fun trip with setting PATH varibles rollercoster ride is to never touch that mess.
-to never be able to touch it, i made sure I used the right user to run the go command.
-let me explain: here the goal is to create the binary for the lib-virt provider.
-in there documentation they say it would be created in the gopath's "bin" folder.
-go was complaining it could not find the go path something like that.
-so offcourse I set the PATH vars all over the place, and used the .profile as the source esscentially also simulated the logout login function, Go keeps nagging about some carp ether it goroot gohome etc,. i cannot get into explaining the BS, that you have to go through while useing golang... i mean am sure golang works perfectly well for simps, who would install it manually and do the following stuff manually like a chimp, but since i took this new gig to automate everything(almost like a suicide mission for my own carrier), this PATH setting env vars nonsence with golang dosn't fly.
-this is especially true if you are a nonroot user and want to use go commands directly (as in `go get blah_blah`).
-so.. anyhow the main lession learnt is to use the full path of the go binary for executing go commands, and try not to touch the PATH env vars at all.
-/roles/terraform-libvirt-provider/tasks/debian.yml
-Note: for those who (righly) skipped my rant:
-1. It's kinda important to switch from root user to the non-root user while using golang to build this plugin (switch to whichever your user would be running your terrafom code in the future(in my case it will be the same ansible user on the server)).
+How to install terraform and terraform-libvirt-provider on remote bare-metal Debian server using Ansible.
+Soo… kids, in today's class we will install and config the next big automation buzz word out there "Terraform" on our bare-metal server and we will also build a plugin called "terraform-libvirt-provider" using Ansible. This provider plugin is required if you wish to manage a libvirt based VMs on the Host server. To see how to install KVM and libvirt on a remote server (using Ansible)have a look at my previous post.
+If you would rather skip the previous post (I get it) you might want to use this previous post's source as boilerplate code, and you could continue from here.
+This is rather a very simple post, here we will create 2 roles to do the following:
+install terraform on a remote server(Role "terraform")
+clone and build the terraform-libvirt-provider binary (using "go") and init terraform with this plugin for this ansible user. (Role "terraform-libvirt-provider")
+
+
+
+---
+
+Role terraform
+/roles/terraform/tasks/debian.yml (This role's tasks):
+
+
+
+
+https://gist.github.com/github-somerandomguy-xyz/dc6999af9852913c523bc32f7f38f45aAll it takes to install terraform is to download their terraform binary and place it in the right folder.
+Basically, all you need is unzip to unzip the download.
+so first, we "ensure" that all the prerequisites are available(.i.e. unzip package) and next you just download terraform and put it in its place.
+/roles/terraform/defaults/main.yml (the vars required for this role):
+
+
+
+
+These are the vars for the above role's tasks, it's simple and straight-forward, you might have to change the version number over here in the future (hope there's a vaccine for COVID-19/20 in the future).
+
+
+---
+
+Role "terraform-libvirt-provider":
+But 1st a Random Rant, feel free to skip this section.
+to build this plugin we need to use golang, i soon realized the best way to not get trapped in golang's fun trip with "setting PATH variables" roller-coaster-ride is to never touch that mess.
+let me explain: in this role the goal is to create the binary for the lib-virt provider for terraform to use, in this provider's docs they say that the binary would be created in the bin folder, but "go" was complaining it could not find the "go path" or something like that(something with all sorts of path variables in the env, golang juggles around)… I mean off-course I set the PATH vars all over the place, and simulate the logout-login and also essentially used the .profile as the source for executing the "go" functions, but I did all this using Ansible, there was some issue with the way Ansible connects to the remote server as a "secession" (whatever that means)and the way ansible loads the env vars from the remote machine in kinda weird… TBH, i don't know how, but at-least i think i have enough knowledge to point the blame, I think this is due to the unholy 3some marriage between Ansible, goland and linux env vars. It's definitely not my mediocracy.
+am sure golang works perfectly fine for simps, who would install it manually and use it manually like a chimp, but since i took this new gig to automate everything(almost like a suicide mission for my own carrier), this PATH setting env vars nonsence with golang didn't fly with ansible. This is especially true if you are a non-root user and want to use go commands directly (as in go get blah_blah_BS) from ansible shell/cmd
+so.. anyhow the main lesson learnt is to use the full path of the "go" binary for executing "go" commands, and try not to touch the PATH env vars at all.
+/roles/terraform-libvirt-provider/tasks/debian.yml(tasks for this role):
+
+
+
+
+in this role's tasks, we first download and extract the "go" source code to its place.
+clone and build the "terraform-provider-libvirt" from there Github repo.
+
+Note: for those who (rightly so) skipped my rant:
+1. It's kinda important to switch from root user to the non-root user while using golang to build this plugin (switch to whichever user would be running your terrafom code in the future(in my case it will be the same "ansible_user" on the server)).
 2. to avoid confusing the OS to find the goland binary, it's also important to give the full path to the golang binary when executing `go` commands.
-Random Insights and rants, feel free to skip this section:
-Ideally I would love to have a ansible role to do the terraform_apply, this role would just copy the terraform .ts files and cloud-init config filles to the remote server and execute `terrafomr apply` on the btch.
-but I learnt the hard way, that that this strategy would seldom be idemopotent:
-here's my use-case: during my trials to setup this infra, i previously tested my terrafom configs and executed them, later I destroyed everything (using terraform destroy) but some residue was still left behind (like the libvirt network, VM images etc,.).
-on the other this, this scenario, made me realize, if you already have an existing infra (some cloud setup with VMs and bridges/networks etc,.) we need to "import" these resources to terraform state anyways.
-so am left with two choices, I can either nuke the entire server and start managing the terrafom orcestrated infra on a "virgin" server.
-or I could run terrafom import for all the existing resources.
-I belive in most cases, in real world, the latter would be the case (I dont think any self respecting admin with a pulse, would leave the server in it'S virgin state for that long).
+3. we init the terraform in the home path so that it creates a .terraform.d directory in your home directory.
+4. we copy the built plugin to the terraform's plugin directory.
+/roles/terraform-libvirt-provider/defaults/main.yml(vars used by this role):
+
+
+
+
+as always, simple and straight-forward vars settings for this role.
+
+
+---
+
+And... that's it that's mainly it… that's what it takes mainly for preparing the host server to start using terraform and manage your "resources" using terraform's libvirt provider.
+sources: 
+1. ansible-terraform(This Post's complete source code): https://github.com/github-somerandomguy-xyz/ansible-terraform
+2. ansible-kvm(previous post's souce):
+https://github.com/github-somerandomguy-xyz/ansible-kvm
+3. ansible-boilerplate code(in case you need an almost empty boiler plate code to run from): 
+https://github.com/github-somerandomguy-xyz/ansible-genesis
+
+
+---
+
+Random Rant and Insights, feel free to skip this section:
+Ideally I would like to have an ansible role to do the "terraform_apply"(actually it was supposed to be the 3rd and last role in this post,( in the original pitch I made to the Karma Gods, when I starting this post.)), this role would just copy the terraform's .ts files and cloud-init config files to the remote server and execute `terrafomr apply` on the btch.
+but I learnt the hard way, that having this kinda role based strategy would seldom be idempotent:
+let me explain: in my case, during my trials to setup this infra, i previously tested my terrafom configs and executed them, later I destroyed everything (using `terraform destroy` cmd) but some residue was still left behind (like the libvirt network, VM images etc,.).
+So now, terraform refuses to work if there are resources with the same name, this same name clash issue is the common theme when using libvirt in general… anyhow, this scenario, made me realize, if you already have an existing infra (some cloud setup with VMs , images, bridges/ NAT /other network devices etc,.) we need to "import" these resources to terraform state anyways.
+so am left with two choices, 
+1. I can either nuke the entire server and start managing the terrafom orchestrated infra on a "virgin" server.
+2. or, I could run terrafom import for all the existing resources.
+I believe in most cases, in real world, the latter(2nd case) would be the case (I don't think any self respecting admin with a pulse, would leave the server in it's virgin state for that long).
 aah, so…the next task for me looks like this:
-1. I could write a blog post on how to set install VMs and network configs etc,. on a fresh server, without ansible (basically you login clone the code do changes and execcute terrafom plan and apply cmds). ("must-have" task).
-2. write a post on how to import exising infra to terrafom state and continue maintining from there to orcestrate the infra. ("should-have" task)
-3. do above point 2, using ansible, perhaps ansible can use the "ansible facts" data as input to decide which resources to import to the terraform state. ("nice-to-have" task).
-This would ideally be the place where everything comes together finally.
-the big climax, ( that never happened #spolerAlert #toolate)
-even thought this would work perfectly well if your baremetal server is a virgin server,
-but unfortunately that's seldom the case in the real world, no self respcting admins with a pulse, would let that be the case(… I think).
-but in my case the issue was there was already an preexisting infra on the server (mainly networkconfigs and virsh VMs managed by KVM hypervisers), now the terraformform docs do give a nifty soultions for this, using "imports" or something <do proper reasearch on why we cannot codify all the imports on existing infra> am not really sure how it works, based on the 2nd hand info from stackoverflow and googing around, i see that i should execute the "import"on terraform cli, i find this sooultion ugly, i woulld rather mentione it in the code, to import all the exising infra,
-one idea is to use the ansible facts as the input for the terraform imports and make terraform initialize and maintain a terraform state from there.<should do reasearch on, weather it's possiable, if nt why it's not possablle">
-/roles/terraform_apply/tasks/debian.yml
+1. I could write a blog post on how to install VMs and network configs etc,. on a fresh server, without ansible (basically you login, clone the code do changes and execute terrafom plan and apply cmds). ("must-have" task/feature).
+2. write a post on how to import existing infra to terrafom state and continue maintaining from there to orchestrate the infra. ("should-have" task/feature)
+3. do above point 2, using ansible, perhaps ansible can use the "ansible facts" data as input to decide which resources to import to the terraform state. ("nice-to-have" task/feature).
+So the next post would be to complete at-least the "must-have" feature(1st one), and then the 2nd and/or the 3rd tasks.
