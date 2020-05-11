@@ -2,9 +2,45 @@
 <subtitle>Use Jenkins to build and push the Docker image to a private docker registry and deploy Docker stack on a remote docker manager node with Ansible.
 Jenkins is an ancient and one hell of a versatile tool to automate the crap out of everything. 
 How to Install Jenkins:<basic install from war file, just download war file and run.>
+on a debian/ubuntu distros you can do this:
+Since Jenkins is an old-timer it's in Java, and you should make sure that you have jre installed.
+if you have time try to get into the politics of the sun systems, java, and oracle triology of law suites.
+if you are a normal person, i guess all you ned to do is to <how dafuk did i really install Java?>
+<liftedd from there official site:(https://www.jenkins.io/doc/book/installing/#debianubuntu)>
+``````````````
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
+    /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+sudo apt-get install jenkins
+
+``````````````
+
+and visit you server IP's port 8080, 
+common trouble shooting:
+ throw in command:
+  systemctl restart jenkins.service, 
+  make sure the port number 8080 is allowed in your firewall, `ufw allow 8080` or somthing like that, depending on your firewall.
+
 How to set up SSL on Jenkins(optional)<1st off you need to figure out this thing>
-all about creating user accounts (optional)
+this is one of those things "you should do it once and do it good", 
+i choose the path more take (like the opposite of what my Grandma would say).
+I choose to use nginx as the reverse proxy and i did a very basic config to set this up on a sub-domain.
+if you want the warning msg "your reverse proxy is broken" to be gone do this <you figure out this part first,>
+all about creating user accounts (optional): <link to be put when the post for setting up LDAP, is finally set, or should i even bother with this??, maybe when excess oof time>.
+
 existing setup:  <write about the structure, of where is Jenkins and where is the docker swarm, mention that they are on diff servers with diff IPs.>
+so here's the scenario, you have the jenkins server installed on a VM somewhere, fortunately you have an ipv4 address to point to that server from anywhere.
+and you have a docker swarm cluster running somewhere else (jenkins not part off the docker swarm cluster, that's what pussies do, installing jenkins in a docker container as part of the docker swarm, and jenkins would start gettinging painfully slow after a couple of test builds.... trust me i should know, lol).
+
+{<perhaps , a post on docker regestry set up on docker swarm>, but is connected to traefik topic, perhaps docker swarm infra setup is it's post, it could include, traefik, internal network, docker regestry}.
+
+existing setup:
+assume docker registry is availabe on a domain address somewhere.
+assume docker swarm is running
+
+
+
 all about choosing Jenkins project, pipeline/freestyle/multibranch pipeline etc,.<probably a random rant topic>
 Pipeline code explain:
 Git repo (with a sample project to deploy?):
