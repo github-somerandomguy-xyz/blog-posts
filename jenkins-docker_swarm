@@ -1,5 +1,5 @@
-Using Jenkins to automate deployment on docker swarm
-Use Jenkins to build and push the Docker image to a private docker registry and deploy Docker stack on a remote docker manager node with Ansible.
+<Title>Using Jenkins to automate deployment on docker swarm
+<subtitle>Use Jenkins to build and push the Docker image to a private docker registry and deploy Docker stack on a remote docker manager node with Ansible.
 Jenkins is an ancient and one hell of a versatile tool to automate the crap out of everything. 
 How to Install Jenkins:<basic install from war file, just download war file and run.>
 How to set up SSL on Jenkins(optional)<1st off you need to figure out this thing>
