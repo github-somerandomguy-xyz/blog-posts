@@ -16,6 +16,143 @@ sudo apt-get install jenkins
 
 ``````````````
 
+<install cmds for history>
+   13  wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+   14  deb https://pkg.jenkins.io/debian-stable binary/
+   25  sudo apt-get install jenkins
+   26  sudo apt install default-jdk
+   27  sudo apt-get install jenkins
+   28  java --version
+   29  sudo add-apt-repository universe
+   30  /etc/init.d/jenkins start
+   31  sudo /etc/init.d/jenkins start
+   32  sudo /etc/init.d/jenkins status
+   33  sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+<install docker in the server with Jenkins>
+  102  sudo apt-get update
+  103  sudo apt-get install     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common
+  104  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  105  sudo apt-key fingerprint 0EBFCD88
+  106  sudo apt-get update
+  107  sudo apt-get install docker-ce docker-ce-cli containerd.io
+  108  sudo groupadd docker
+  109  sudo usermod -aG docker $USER
+  110  exit
+  111  docker -v
+</install docker in the server with Jenkins>
+  339  sudo add-apt-repository ppa:webupd8team/java -y
+  340  sudo apt install oracle-java8-installer
+  341  sudo add-apt-repository ppa:certbot/certbot
+  342  sudo apt install -y nginx python-certbot-nginx
+  343  sudo vim /etc/nginx/sites-available/default 
+  344  sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup-11May2020
+  345  sudo vim /etc/nginx/sites-available/default 
+  346  sudo nginx -t
+  347  sudo vim /etc/nginx/sites-available/default 
+  348  sudo nginx -t
+  349  sudo systemctl restart nginx
+  350  sudo certbot --nginx -d jenkins.example.com
+  351  sudo certbot --nginx -d jenkins.stokr.io
+  352  sudo systemctl restart jenkins.service 
+  353  sudo systemctl restart nginx.service 
+----------------------------
+  369  sudo cp /etc/nginx/sites-available/default.backup-11May2020 /etc/nginx/sites-available/default
+  370  sudo nginx -t
+  371  sudo vim /etc/nginx/sites-available/default 
+  372  sudo systemctl stop nginx.service 
+  373  sudo vim /etc/nginx/sites-available/default 
+  374  sudo nginx -t
+  375  sudo systemctl restart nginx
+  376  sudo certbot --nginx -d jenkins.stokr.io
+
+</install cmds for history>
+
+
+</etc/nginx/sites-availabe/default>
+##
+# You should look at the following URL's in order to grasp a solid understanding
+# of Nginx configuration files in order to fully unleash the power of Nginx.
+# https://www.nginx.com/resources/wiki/start/
+# https://www.nginx.com/resources/wiki/start/topics/tutorials/config_pitfalls/
+# https://wiki.debian.org/Nginx/DirectoryStructure
+#
+# In most cases, administrators will remove this file from sites-enabled/ and
+# leave it as reference inside of sites-available where it will continue to be
+# updated by the nginx packaging team.
+#
+# This file will automatically load configuration files provided by other
+# applications, such as Drupal or Wordpress. These applications will be made
+# available underneath a path with that package name, such as /drupal8.
+#
+# Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
+##
+
+# Default server configuration
+#
+upstream jenkins {
+  server 127.0.0.1:8080 fail_timeout=0;
+}
+server {
+
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name jenkins.stokr.io;
+
+        location / {
+                proxy_set_header        Host $host:$server_port;
+                proxy_set_header        X-Real-IP $remote_addr;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme; 
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection "upgrade";
+                proxy_pass              http://jenkins;
+        }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/jenkins.stokr.io/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/jenkins.stokr.io/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+# Virtual Host configuration for example.com
+#
+# You can move that to a different file under sites-available/ and symlink that
+# to sites-enabled/ to enable it.
+#
+#server {
+#	listen 80;
+#	listen [::]:80;
+#
+#	server_name example.com;
+#
+#	root /var/www/example.com;
+#	index index.html;
+#
+#	location / {
+#		try_files $uri $uri/ =404;
+#	}
+#}
+
+server {
+    if ($host = jenkins.stokr.io) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        server_name jenkins.stokr.io;
+    return 404; # managed by Certbot
+
+
+}
+</etc/nginx/sites-availabe/default>
+
 and visit you server IP's port 8080, 
 common trouble shooting:
  throw in command:
@@ -23,7 +160,7 @@ common trouble shooting:
   make sure the port number 8080 is allowed in your firewall, `ufw allow 8080` or somthing like that, depending on your firewall.
 
 How to set up SSL on Jenkins(optional)<1st off you need to figure out this thing>
-this is one of those things "you should do it once and do it good", 
+this is one of those things "you should do it once and do it right", 
 i choose the path more take (like the opposite of what my Grandma would say).
 I choose to use nginx as the reverse proxy and i did a very basic config to set this up on a sub-domain.
 if you want the warning msg "your reverse proxy is broken" to be gone do this <you figure out this part first,>
