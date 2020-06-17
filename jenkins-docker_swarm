@@ -5,7 +5,7 @@ How to Install Jenkins:<basic install from war file, just download war file and 
 on a debian/ubuntu distros you can do this:
 Since Jenkins is an old-timer it's in Java, and you should make sure that you have jre installed.
 if you have time try to get into the politics of the sun systems, java, and oracle triology of law suites.
-if you are a normal person, i guess all you ned to do is to <how dafuk did i really install Java?>
+if you are a normal person, i guess all you ned to do is to  `sudo apt install default-jdk`
 <liftedd from there official site:(https://www.jenkins.io/doc/book/installing/#debianubuntu)>
 ``````````````
 wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
@@ -15,6 +15,59 @@ sudo apt-get update
 sudo apt-get install jenkins
 
 ``````````````
+you should be able to access jenkins on http://<server ip address>:8080
+
+restart jenkins server just in case (sudo /etc/init.d/jenkins start), also check if you have a firewall, the port is opened.
+
+if you can see the dashboard the inital admin pwd is at:
+the intial admin pwd is at sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+now to get ssl certs from let's encrypt:
+
+you have to install certbot
+
+  341  sudo add-apt-repository ppa:certbot/certbot
+  342  sudo apt install -y nginx python-certbot-nginx
+
+  set up nginx to act as reverse-proxy for your jenkins server (jenkins running localhost:8080)
+  backup your org file cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup
+
+  edit the original file( for maximum effect)
+
+  upstream jenkins {
+  server 127.0.0.1:8080 fail_timeout=0;
+}
+server {
+
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name jenkins.stokr.io;
+
+        location / {
+                proxy_set_header        Host $host:$server_port;
+                proxy_set_header        X-Real-IP $remote_addr;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme; 
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection "upgrade";
+                proxy_pass              http://jenkins;
+        }
+}
+
+
+
+  344  sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup-11May2020
+  345  sudo vim /etc/nginx/sites-available/default 
+  346  sudo nginx -t
+  347  sudo vim /etc/nginx/sites-available/default 
+  348  sudo nginx -t
+  349  sudo systemctl restart nginx
+  350  sudo certbot --nginx -d jenkins.example.com
+  351  sudo certbot --nginx -d jenkins.stokr.io
+  352  sudo systemctl restart jenkins.service 
+  353  sudo systemctl restart nginx.service 
+
 
 <install cmds for history>
    13  wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
