@@ -1,0 +1,30 @@
+convinence setup (optional): edit bashrc in the home dir, 
+
+add these 2 lines under the history settings of the bashrc
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
+
+
+
+finally should like (for sanity purpose, to group the history related business in 1 block of the script)
+....
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
+....
+
+now you can type the first few letters of the command on bash and hit up|down arrow to search the commands that match the pre-text you entered, very handy low intrution hack, comes in handy when u spend a lot of time on the bash.
+
+make the user sudo user 
+adduser <username>
+usermod -aG sudo <username>
+when env == staging/ test env && !== (NOT Equal to) prod env:
+add the sudo user to use sudo cmds with nopwd,
+sudo visudo
+add below line to the bottom of the file.
+<username> ALL=(ALL) NOPASSWD:ALL
+
+finally refresh bash by logout (enter "exit" cmd) and then login again.
