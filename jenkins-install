@@ -1,7 +1,8 @@
 <Title>Install Jenkins on server with SSL from letsencrypt
 <Subtitle>
 "There are many ways to cut it" where "it"== Jenkins.
-here, we use the combination of installing the jenkins through there war file,
+here, we take the path most taken (lik the opposite of that proverb).
+we use the combination of installing the jenkins through there war file,
 install nginx as reverse proxy,
 install certbot to get SSL cert from letsencrypt.
 
@@ -22,7 +23,7 @@ https://www.cyberciti.biz/faq/linux-unix-running-sudo-command-without-a-password
 
 Since Jenkins is an old-timer it's in Java, and you should make sure that you have jre installed.
 if you have time try to get into the politics of the sun systems, java (some wild Cat's coffee shit), and oracle triology of law suites.
-if you are a normal person, i guess all you ned to do is to  `sudo apt install default-jdk`.
+if you are a normal person, i guess all you ned to do is to  install default-jdk if you are on Ubuntu, for other distro try to figure out hw to install open-jdk, for your distro.
 
 below block is for installing jenkins:
 
@@ -41,7 +42,7 @@ sudo apt-get update
 sudo apt-get install jenkins
 
 ``````````````
-if (is jenkins running accessable at http://<server ip address>:8080 == true)
+if (is jenkins accessable at http://<server ip address>:8080 == true)
 {
     setup_nginx_with_cert_bot()
 }
@@ -57,8 +58,11 @@ incase if some other application is using the default port 8080, u can change th
 sudo add-apt-repository universe
 }
 
-if you can see the dashboard the inital admin pwd is at:
+PS: if you can see the dashboard the inital admin pwd is at:
 the intial admin pwd is at sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+
+this is to get ssl cert from letsencrypt to the jenkins host, using certbot for cert and nginx for reverseproxy for the locally running jenkins.
 
 setup_nginx_with_cert_bot(){
 
@@ -102,6 +106,11 @@ sudo certbot --nginx -d jenkins.example.com
 sudo systemctl restart jenkins.service 
 sudo systemctl restart nginx.service 
 }
+
+now you should be able to go to https://jenkins.example.com
+
+thats it enjoy playing around with your beautiful jenkins dasboard, 
+i think the ux in the original jenkins (not the blueocean version) is intentionally kept horriable to keep socal buterflies at bay.
 
 <install cmds for history>
    13  wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
